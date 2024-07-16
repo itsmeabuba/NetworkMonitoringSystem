@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Network Traffic Monitor</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://d3js.org/d3.v5.min.js"></script>  <!-- Include D3.js library -->
+    <meta http-equiv="refresh" content="5"> <!-- Refresh every 5 seconds -->
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Network Traffic Monitor</h1>
+        <div id="chart"></div>  <!-- Placeholder for the D3.js chart -->
+        <div id="data-entries" data-entries="{{ json_entries }}"></div>
+    </div>
+
+    <script>
+        // Get the JSON data from the 'data-entries' attribute of a hidden element
+        var data = JSON.parse(document.getElementById('data-entries').getAttribute('data-entries'));
+    
+        // D3.js code to visualize the data
+        var margin = {top: 10, right: 30, bottom: 40, left: 70},
+            width = 960 - margin.left - margin.right,
+            height = 360 - margin.top - margin.bottom;
+    
+        var x = d3.scaleTime().range([0, width]);
+        var y = d3.scaleLinear().range([height, 0]);
+    
+        var svg = d3.select("#chart").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+        data.forEach(function(d) {
+            d.timestamp = new Date(d.date + ' ' + d.time);  // Combine date and time
+            d.length = +d.length;
+        });
+    
+        x.domain(d3.extent(data, function(d) { return d.timestamp; }));
+        y.domain([0, d3.max(data, function(d) { return d.length; })]);
+    
+        // Append x-axis label
+        svg.append("text")
+            .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.top + 20) + ")")
+            .style("text-anchor", "middle")
+            .text("Timestamp");
+    
+        // Append y-axis label
+        svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x", 0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Packet Length");
+    
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+    
+        svg.append("g")
+            .call(d3.axisLeft(y));
+    
+        svg.selectAll(".bar")
+            .data(data)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function(d) { return x(d.timestamp); })
+            .attr("y", function(d) { return y(d.length); })
+            .attr("width", 1)
+            .attr("height", function(d) { return height - y(d.length); });
+    </script>
+</body>
+</html>
